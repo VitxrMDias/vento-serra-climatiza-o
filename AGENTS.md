@@ -28,3 +28,10 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+
+- All editable business content (company name, city, services, FAQ, nav, SEO text, WhatsApp number) lives in `src/config/site.ts`; components read from it so a new client needs only config + color edits.
+- Quote form logic (validation, message building, clipboard, WhatsApp link) lives in pure functions in `src/lib/quote.ts`, covered by `src/lib/quote.test.ts`; UI stays presentational.
+- Dark sections use the `.theme-petrol` / `.theme-petrol-deep` classes that remap semantic tokens, instead of per-component color overrides.
+- The site is a single page with in-page anchors by explicit user request; keep `/` as the only content route unless that changes.
