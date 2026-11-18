@@ -1,5 +1,5 @@
 import { Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { COMPANY_NAME, COMPANY_TAGLINE, NAV_LINKS } from "@/config/site";
@@ -25,6 +25,8 @@ export function BrandMark({ className }: { className?: string }) {
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileNavRef = useRef<HTMLElement>(null);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -36,7 +38,11 @@ export function SiteHeader() {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (mobileNavRef.current?.contains(document.activeElement)) menuButtonRef.current?.focus();
+      setOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
@@ -74,6 +80,7 @@ export function SiteHeader() {
             size="icon"
             className="md:hidden"
             aria-expanded={open}
+            ref={menuButtonRef}
             aria-controls="menu-mobile"
             aria-label={open ? "Fechar menu" : "Abrir menu"}
             onClick={() => setOpen((v) => !v)}
@@ -84,6 +91,7 @@ export function SiteHeader() {
       </div>
 
       <nav
+        ref={mobileNavRef}
         id="menu-mobile"
         aria-label="Menu móvel"
         hidden={!open}
