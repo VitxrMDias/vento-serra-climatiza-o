@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,7 @@ function ChoiceGroup({ field, legend, options, value, errors, onChange, columns 
                 checked={value === o.id}
                 onChange={() => onChange(o.id)}
                 aria-invalid={invalid || undefined}
+                aria-describedby={invalid ? errorId(field) : undefined}
                 // o primeiro radio recebe o id do campo para o foco em caso de erro
                 data-field={i === 0 ? field : undefined}
                 className="peer sr-only"
@@ -98,6 +99,9 @@ export function QuoteForm({ preselected }: { preselected: { id: ServiceId; at: n
   const [errors, setErrors] = useState<QuoteErrors>({});
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitterRef = useRef<HTMLElement | null>(null);
+  const invalidField = useRef<QuoteField | undefined>(undefined);
 
   useEffect(() => {
     if (preselected) {
@@ -111,23 +115,26 @@ export function QuoteForm({ preselected }: { preselected: { id: ServiceId; at: n
     if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }));
   };
 
-  const focusField = (field: QuoteField) => {
-    const el =
-      document.querySelector<HTMLElement>(`[data-field="${field}"]`) ??
-      document.getElementById(fieldId(field));
-    el?.focus();
-  };
+  useEffect(() => {
+    const field = invalidField.current;
+    if (!field) return;
+    invalidField.current = undefined;
+    formRef.current?.querySelector<HTMLElement>(`[data-field="${field}"], #${fieldId(field)}`)?.focus();
+  }, [errors]);
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     const result = validateQuote(values);
     if (!result.ok) {
+      invalidField.current = FIELD_ORDER.find((field) => result.errors[field]);
       setErrors(result.errors);
-      const first = FIELD_ORDER.find((f) => result.errors[f]);
-      if (first) focusField(first);
       return;
     }
     setErrors({});
+    submitterRef.current =
+      (e.nativeEvent as SubmitEvent).submitter ??
+      formRef.current?.querySelector<HTMLButtonElement>('button[type="submit"]') ??
+      null;
     setMessage(buildQuoteMessage(result.data));
     setOpen(true);
   };
@@ -151,12 +158,13 @@ export function QuoteForm({ preselected }: { preselected: { id: ServiceId; at: n
           </p>
           {IS_DEMO ? (
             <p className="mt-6 rounded-xl border border-cta/40 bg-cta/10 px-4 py-3 text-sm font-medium">
-              Simulação: nenhuma mensagem é enviada ou armazenada.
+              Use dados fictícios. Nenhuma mensagem é enviada ou armazenada.
             </p>
           ) : null}
         </div>
 
         <form
+          ref={formRef}
           noValidate
           onSubmit={onSubmit}
           aria-label="Simulação de orçamento"
@@ -172,7 +180,7 @@ export function QuoteForm({ preselected }: { preselected: { id: ServiceId; at: n
             </Label>
             <Input
               id={fieldId("name")}
-              autoComplete="given-name"
+              autoComplete={IS_DEMO ? "off" : "given-name"}
               maxLength={80}
               value={values.name}
               onChange={(e) => set("name")(e.target.value)}
@@ -258,7 +266,17 @@ export function QuoteForm({ preselected }: { preselected: { id: ServiceId; at: n
         </form>
       </div>
 
-      <QuoteSummaryDialog open={open} onOpenChange={setOpen} message={message} />
+      <QuoteSummaryDialog
+        open={open}
+        onOpenChange={setOpen}
+        message={message}
+        onCloseAutoFocus={(event) => {
+          const target = submitterRef.current;
+          if (!target) return;
+          event.preventDefault();
+          target.focus();
+        }}
+      />
     </section>
   );
 }

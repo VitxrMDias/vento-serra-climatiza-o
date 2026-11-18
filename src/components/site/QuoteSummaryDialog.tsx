@@ -19,9 +19,10 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   message: string;
+  onCloseAutoFocus: (event: Event) => void;
 }
 
-export function QuoteSummaryDialog({ open, onOpenChange, message }: Props) {
+export function QuoteSummaryDialog({ open, onOpenChange, message, onCloseAutoFocus }: Props) {
   const [state, setState] = useState<CopyState>("idle");
   const textRef = useRef<HTMLTextAreaElement>(null);
   const whatsapp = buildWhatsAppLink(message);
@@ -46,7 +47,7 @@ export function QuoteSummaryDialog({ open, onOpenChange, message }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92svh] gap-6 overflow-y-auto rounded-2xl border-border bg-card p-6 sm:max-w-xl sm:p-8">
+      <DialogContent onCloseAutoFocus={onCloseAutoFocus} className="max-h-[92svh] gap-6 overflow-y-auto rounded-2xl border-border bg-card p-6 sm:max-w-xl sm:p-8">
         <DialogHeader className="text-left">
           <p className="eyebrow">Resumo da simulação</p>
           <DialogTitle className="font-display text-3xl font-normal leading-tight sm:text-4xl">
